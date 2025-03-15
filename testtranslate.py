@@ -2,6 +2,9 @@ import pandas as pd
 import time
 import os
 from deep_translator import GoogleTranslator
+from flask import Flask, send_file
+
+app = Flask(__name__)
 
 def translate_text(text, target_lang='vi'):
     try:
@@ -119,6 +122,36 @@ def process_all_files():
     
     print("\n===== HOÀN THÀNH DỊCH TẤT CẢ CÁC FILE =====")
 
-# Chạy hàm xử lý tất cả các file
-if __name__ == "__main__":
+@app.route('/')
+def home():
+    return """
+    <h1>Dịch CSV</h1>
+    <p><a href="/translate">Bắt đầu dịch</a></p>
+    <p><a href="/download/train">Tải xuống train_vietnamese.csv</a></p>
+    <p><a href="/download/test">Tải xuống test_vietnamese.csv</a></p>
+    """
+
+@app.route('/translate')
+def translate_route():
     process_all_files()
+    return """
+    <h1>Đã hoàn thành dịch!</h1>
+    <p><a href="/download/train">Tải xuống train_vietnamese.csv</a></p>
+    <p><a href="/download/test">Tải xuống test_vietnamese.csv</a></p>
+    """
+
+@app.route('/download/<file_type>')
+def download(file_type):
+    base_dir = find_csv_files() or "app/data"
+    
+    if file_type == 'train':
+        path = os.path.join(base_dir, "train_vietnamese.csv")
+        return send_file(path, as_attachment=True)
+    elif file_type == 'test':
+        path = os.path.join(base_dir, "test_vietnamese.csv")
+        return send_file(path, as_attachment=True)
+    else:
+        return "Tệp không hợp lệ", 400
+
+if __name__ == "__main__":
+    app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
